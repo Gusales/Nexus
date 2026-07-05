@@ -229,7 +229,7 @@ importers:
         specifier: 2.10.3
         version: 2.10.3
       typescript:
-        specifier: ^6.0.3
+        specifier: 6.0.3
         version: 6.0.3
 
   packages/eslint-config:
@@ -250,6 +250,12 @@ importers:
       typescript-eslint:
         specifier: 8.62.1
         version: 8.62.1(eslint@9.0.0)(typescript@6.0.3)
+
+  packages/shared-types:
+    devDependencies:
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
 
 packages:
 
