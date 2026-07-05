@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, "feat/**", "fix/**", "docs/**"]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-test-node:
+    name: Lint & Test (Node packages)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared-types
+        run: pnpm --filter @nexus/shared-types build
+
+      - name: Lint
+        run: pnpm -r lint --if-present
+
+      - name: Testes unitários (shared-types + agent-sidecar)
+        run: |
+          pnpm --filter @nexus/shared-types test --if-present
+          pnpm --filter agent-sidecar test --if-present
+
+      - name: Testes unitários (mobile)
+        run: pnpm --filter mobile test --if-present -- --watchAll=false
+
+  build-check-sidecar:
+    name: Build check — agent-sidecar
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - name: Build sidecar
+        run: pnpm --filter agent-sidecar build
+
+  build-check-shell:
+    name: Build check — agent-shell (Tauri)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+      - uses: dtolnay/rust-toolchain@stable
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Testes Rust
+        working-directory: apps/agent-shell/src-tauri
+        run: cargo test
+
+      - name: Build check (sem empacotar instalador)
+        run: pnpm --filter agent-shell tauri build --debug

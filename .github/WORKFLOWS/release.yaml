@@ -1,0 +1,110 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  version-or-release:
+    name: Versionar ou preparar release
+    runs-on: ubuntu-latest
+    outputs:
+      released: ${{ steps.changesets.outputs.published }}
+      hasChangesets: ${{ steps.changesets.outputs.hasChangesets }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Rodar suíte de testes completa (gate final)
+        run: |
+          pnpm --filter @nexus/shared-types build
+          pnpm --filter @nexus/shared-types test --if-present
+          pnpm --filter agent-sidecar test --if-present
+
+      - name: Changesets — versionar ou abrir PR de versão
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          version: pnpm changeset version
+          commit: "chore: version packages"
+          title: "chore: version packages"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-and-publish:
+    name: Build de artefatos e publicação da Release
+    needs: version-or-release
+    if: needs.version-or-release.outputs.hasChangesets == 'false'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build sidecar (exe standalone)
+        run: pnpm --filter agent-sidecar build:exe
+
+      - name: Build instalador Tauri
+        run: pnpm --filter agent-shell tauri build
+
+      - name: Ler versão do package.json
+        id: pkg
+        shell: pwsh
+        run: |
+          $version = (Get-Content apps/agent-shell/package.json | ConvertFrom-Json).version
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Calcular SHA-256 do instalador
+        id: hash
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem -Path "apps/agent-shell/src-tauri/target/release/bundle" -Recurse -Include *.msi,*.exe | Select-Object -First 1
+          $hash = (Get-FileHash -Path $installer.FullName -Algorithm SHA256).Hash
+          echo "installer_path=$($installer.FullName)" >> $env:GITHUB_OUTPUT
+          echo "sha256=$hash" >> $env:GITHUB_OUTPUT
+
+      - name: Criar tag e GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v${{ steps.pkg.outputs.version }}"
+          name: "v${{ steps.pkg.outputs.version }}"
+          body: |
+            Changelog completo em [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/apps/agent-shell/CHANGELOG.md).
+
+            | Versão | SHA-256 |
+            |---|---|
+            | GitHub Release x64 | `${{ steps.hash.outputs.sha256 }}` |
+          files: ${{ steps.hash.outputs.installer_path }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
