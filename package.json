@@ -4,7 +4,8 @@
   "version": "0.0.0",
   "description": "mobile-first web dashboard for remote control of a Windows PC. Allows monitoring CPU/RAM/GPU usage, terminating processes, adjusting per-app volume, and executing actions like Wake-on-LAN and shutd…",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "keywords": [],
   "author": "",
@@ -18,7 +19,13 @@
   },
   "type": "module",
   "devDependencies": {
-    "@changesets/cli": "^2.31.0",
-    "turbo": "^2.10.3"
+    "@changesets/cli": "2.31.0",
+    "@nexus/eslint-config": "workspace:*",
+    "eslint": "10.6.0",
+    "eslint-plugin-react": "7.37.5",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-react-native": "5.0.0",
+    "turbo": "2.10.3",
+    "typescript": "6.0.3"
   }
 }
