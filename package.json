@@ -1,0 +1,24 @@
+{
+  "name": "Nexus",
+  "private": "true",
+  "version": "0.0.0",
+  "description": "mobile-first web dashboard for remote control of a Windows PC. Allows monitoring CPU/RAM/GPU usage, terminating processes, adjusting per-app volume, and executing actions like Wake-on-LAN and shutd…",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "^11.9.0",
+      "onFail": "download"
+    }
+  },
+  "type": "module",
+  "devDependencies": {
+    "@changesets/cli": "^2.31.0",
+    "turbo": "^2.10.3"
+  }
+}
