@@ -5,7 +5,8 @@
   "description": "mobile-first web dashboard for remote control of a Windows PC. Allows monitoring CPU/RAM/GPU usage, terminating processes, adjusting per-app volume, and executing actions like Wake-on-LAN and shutd…",
   "scripts": {
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "dev:sidecar": "pnpm --filter agent-sidecar dev"
   },
   "keywords": [],
   "author": "",
